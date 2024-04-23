@@ -1,58 +1,62 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
+import java.io.*;
+
+class FilesNotFoundException extends Exception {
+    public FilesNotFoundException(String message) {
+        super(message);
+    }
+}
 
 
 public class wordFreq {
     public static void main(String[] args) {
         String txtfileDirec = "D://chrome download folder//musictextfilejava";
-        File Directory = new File(txtfileDirec);
-        String[] fileNames = Directory.list();
-        Map<String, int[]> wordFreqMap = new HashMap<>();
+        File directory = new File(txtfileDirec);
+        String[] fileNames = directory.list();
+
+        if (fileNames == null || fileNames.length == 0) {
+            try {
+                throw new FilesNotFoundException("No files found in directory: " + txtfileDirec);
+            } catch (FilesNotFoundException e) {
+                System.err.println(e.getMessage());
+                return;
+            }
+        }
+
+        Map<String, Integer> fileIndexMap = new HashMap<>();
+        for (int i = 0; i < fileNames.length; i++) {
+            fileIndexMap.put(fileNames[i], i);
+        }
+
+        Map<String, int[]> wordFreqMap = new TreeMap<>();
 
         for (String filename : fileNames) {
-            File file = new File(Directory, filename); // Correcting the file path
-            try {
-                Scanner scanner = new Scanner(file);
+            File file = new File(directory, filename);
+            try (Scanner scanner = new Scanner(file)) {
                 while (scanner.hasNext()) {
                     String word = scanner.next().toLowerCase();
-                    if (!word.isEmpty() && word.matches("[a-z]+")) { // Check if word is not empty and contains only alphabets
+                    if (!word.isEmpty() && word.matches("[a-z]+")) {
                         int[] frequencies = wordFreqMap.getOrDefault(word, new int[fileNames.length]);
-                        frequencies[getIndex(fileNames, filename)]++;
+                        frequencies[fileIndexMap.get(filename)]++;
                         wordFreqMap.put(word, frequencies);
                     }
                 }
-                scanner.close();
             } catch (FileNotFoundException e) {
                 System.out.println("File not found: " + filename);
             }
         }
 
-        List<Map.Entry<String, int[]>> sortedEntries = new ArrayList<>(wordFreqMap.entrySet());
-        Collections.sort(sortedEntries, Map.Entry.comparingByKey());
-
         // Export word frequencies to CSV
-        exportWordFreqToCSV(wordFreqMap, "word_frequencies.csv");
+        exportWordFreqToCSV(wordFreqMap, "word_frequencies.csv", fileNames);
     }
 
-    private static int getIndex(String[] fileNames, String fileName) {
-        for (int i = 0; i < fileNames.length; i++) {
-            if (fileNames[i].equals(fileName)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static void exportWordFreqToCSV(Map<String, int[]> wordFreqMap, String csvFile) {
+    private static void exportWordFreqToCSV(Map<String, int[]> wordFreqMap, String csvFile, String[] fileNames) {
         try (FileWriter writer = new FileWriter(csvFile)) {
             // Write header
             writer.append("Word");
-            for (int i = 0; i < wordFreqMap.entrySet().iterator().next().getValue().length; i++) {
+            for (String fileName : fileNames) {
                 writer.append(',');
-                writer.append("File" + (i + 1)); // File names as column headers
+                writer.append(fileName); // File names as column headers
             }
             writer.append('\n');
 
@@ -68,9 +72,7 @@ public class wordFreq {
 
             System.out.println("Word frequencies exported to CSV file successfully!");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error exporting word frequencies to CSV file: " + e.getMessage());
         }
     }
-
-    }
-
+}
