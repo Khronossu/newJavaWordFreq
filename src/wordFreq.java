@@ -9,20 +9,22 @@ class FilesNotFoundException extends Exception {
 
 public class wordFreq {
     public static void main(String[] args) {
-        String txtfileDirec = "D://chrome download folder//musictextfilejava";
-        File directory = new File(txtfileDirec);
+
+
+        String txtfilePath = "D://chrome download folder//musictextfilejava"; //set the .txt file directory
+        File directory = new File(txtfilePath);
         String[] fileNames = directory.list();
 
         if (fileNames == null || fileNames.length == 0) {
             try {
-                throw new FilesNotFoundException("No files found in directory: " + txtfileDirec);
+                throw new FilesNotFoundException("No files found in directory: " + directory);
             } catch (FilesNotFoundException e) {
                 System.err.println(e.getMessage());
                 return;
             }
         }
 
-        List<String> wordsList = new ArrayList<>();
+        List<String> words = new ArrayList<>();
         Map<String, Integer> fileIndexMap = new HashMap<>();
         for (int i = 0; i < fileNames.length; i++) {
             fileIndexMap.put(fileNames[i], i);
@@ -34,8 +36,8 @@ public class wordFreq {
                 while (scanner.hasNext()) {
                     String word = scanner.next().toLowerCase().replaceAll("[^a-zA-Z]", ""); // Remove non-alphabetic characters
                     if (!word.isEmpty()) {
-                        if (!wordsList.contains(word)) {
-                            wordsList.add(word);
+                        if (!words.contains(word)) {
+                            words.add(word);
                         }
                     }
                 }
@@ -45,10 +47,10 @@ public class wordFreq {
         }
 
         // Sort words alphabetically
-        Collections.sort(wordsList);
+        Collections.sort(words);
 
-        // Create word frequency matrix
-        int[][] wordFreqMatrix = new int[wordsList.size()][fileNames.length];
+        // 2D array for storing
+        int[][] wordFreqMatrix = new int[words.size()][fileNames.length];
 
         for (String filename : fileNames) {
             int fileIndex = fileIndexMap.get(filename);
@@ -57,7 +59,7 @@ public class wordFreq {
                 while (scanner.hasNext()) {
                     String word = scanner.next().toLowerCase().replaceAll("[^a-zA-Z]", ""); // Remove non-alphabetic characters
                     if (!word.isEmpty()) {
-                        int wordIndex = wordsList.indexOf(word);
+                        int wordIndex = words.indexOf(word);
                         wordFreqMatrix[wordIndex][fileIndex]++;
                     }
                 }
@@ -67,20 +69,19 @@ public class wordFreq {
         }
 
         // Export word frequencies to CSV
-        exportWordFreqToCSV(wordsList, wordFreqMatrix, "word_frequencies.csv", fileNames);
+        exportWordFreqToCSV(words, wordFreqMatrix, "word_frequencies.csv", fileNames);
     }
 
     private static void exportWordFreqToCSV(List<String> wordsList, int[][] wordFreqMatrix, String csvFile, String[] fileNames) {
         try (FileWriter writer = new FileWriter(csvFile)) {
-            // Write header
-            writer.append("Word");
+            writer.append("Word"); //set Header
             for (String fileName : fileNames) {
                 writer.append(',');
-                writer.append(fileName); // File names as column headers
+                writer.append(fileName); // set file name as column header
             }
             writer.append('\n');
 
-            // Write data
+            // Write the matrix
             for (int i = 0; i < wordsList.size(); i++) {
                 writer.append(wordsList.get(i)); // Word
                 for (int j = 0; j < fileNames.length; j++) {
@@ -90,9 +91,9 @@ public class wordFreq {
                 writer.append('\n');
             }
 
-            System.out.println("Word frequencies exported to CSV file successfully!");
+            System.out.println("Word Frequency have been exported to .csv!");
         } catch (IOException e) {
-            System.err.println("Error exporting word frequencies to CSV file: " + e.getMessage());
+            System.err.println("Something went wrong!: " + e.getMessage());
         }
     }
 }
