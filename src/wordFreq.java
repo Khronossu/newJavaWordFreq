@@ -7,7 +7,6 @@ class FilesNotFoundException extends Exception {
     }
 }
 
-
 public class wordFreq {
     public static void main(String[] args) {
         String txtfileDirec = "D://chrome download folder//musictextfilejava";
@@ -23,22 +22,43 @@ public class wordFreq {
             }
         }
 
+        List<String> wordsList = new ArrayList<>();
         Map<String, Integer> fileIndexMap = new HashMap<>();
         for (int i = 0; i < fileNames.length; i++) {
             fileIndexMap.put(fileNames[i], i);
         }
 
-        Map<String, int[]> wordFreqMap = new TreeMap<>();
-
         for (String filename : fileNames) {
             File file = new File(directory, filename);
             try (Scanner scanner = new Scanner(file)) {
                 while (scanner.hasNext()) {
-                    String word = scanner.next().toLowerCase();
-                    if (!word.isEmpty() && word.matches("[a-z]+")) {
-                        int[] frequencies = wordFreqMap.getOrDefault(word, new int[fileNames.length]);
-                        frequencies[fileIndexMap.get(filename)]++;
-                        wordFreqMap.put(word, frequencies);
+                    String word = scanner.next().toLowerCase().replaceAll("[^a-zA-Z]", ""); // Remove non-alphabetic characters
+                    if (!word.isEmpty()) {
+                        if (!wordsList.contains(word)) {
+                            wordsList.add(word);
+                        }
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                System.out.println("File not found: " + filename);
+            }
+        }
+
+        // Sort words alphabetically
+        Collections.sort(wordsList);
+
+        // Create word frequency matrix
+        int[][] wordFreqMatrix = new int[wordsList.size()][fileNames.length];
+
+        for (String filename : fileNames) {
+            int fileIndex = fileIndexMap.get(filename);
+            File file = new File(directory, filename);
+            try (Scanner scanner = new Scanner(file)) {
+                while (scanner.hasNext()) {
+                    String word = scanner.next().toLowerCase().replaceAll("[^a-zA-Z]", ""); // Remove non-alphabetic characters
+                    if (!word.isEmpty()) {
+                        int wordIndex = wordsList.indexOf(word);
+                        wordFreqMatrix[wordIndex][fileIndex]++;
                     }
                 }
             } catch (FileNotFoundException e) {
@@ -47,10 +67,10 @@ public class wordFreq {
         }
 
         // Export word frequencies to CSV
-        exportWordFreqToCSV(wordFreqMap, "word_frequencies.csv", fileNames);
+        exportWordFreqToCSV(wordsList, wordFreqMatrix, "word_frequencies.csv", fileNames);
     }
 
-    private static void exportWordFreqToCSV(Map<String, int[]> wordFreqMap, String csvFile, String[] fileNames) {
+    private static void exportWordFreqToCSV(List<String> wordsList, int[][] wordFreqMatrix, String csvFile, String[] fileNames) {
         try (FileWriter writer = new FileWriter(csvFile)) {
             // Write header
             writer.append("Word");
@@ -61,11 +81,11 @@ public class wordFreq {
             writer.append('\n');
 
             // Write data
-            for (Map.Entry<String, int[]> entry : wordFreqMap.entrySet()) {
-                writer.append(entry.getKey()); // Word
-                for (int freq : entry.getValue()) {
+            for (int i = 0; i < wordsList.size(); i++) {
+                writer.append(wordsList.get(i)); // Word
+                for (int j = 0; j < fileNames.length; j++) {
                     writer.append(',');
-                    writer.append(String.valueOf(freq)); // Frequency
+                    writer.append(String.valueOf(wordFreqMatrix[i][j])); // Frequency
                 }
                 writer.append('\n');
             }
